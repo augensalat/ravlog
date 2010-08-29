@@ -1,10 +1,15 @@
-use Test::More;
-use ok 'RavLog::Format::HTML';
-use RavLog::Test::Tidy;
-use Test::HTML::Tidy;
-use Test::XML::Valid;
 use strict;
 use warnings;
+
+use Test::More;
+use ok 'RavLog::Format::HTML';
+use Test::XML::Valid;
+
+my $can_test_tidy = eval {
+    require Test::HTML::Tidy;
+    import Test::HTML::Tidy;
+    require RavLog::Test::Tidy;
+};
 
 my $html = RavLog::Format::HTML->new;
 ok( $html, 'created parser OK' );
@@ -35,27 +40,28 @@ for ( 1 .. 3 ) {
 # to HTML
 
 $output = $html->format($input);
-
-# make output tidier for tidy:
-$output = <<"END";
+$output = <<"";
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
                       "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
       xml:lang="en">
 <head><title>test</title></head><body>$output</body></html>
-END
-if (0) {
-    my @pretty;
-    $output =~ s{</(\w+)>}{</$1>\n}g;
-    @pretty = split /$/m, $output;
-    my $i = 0;
-    @pretty = map { $i++; "$i: $_\n" } @pretty;
-    print @pretty;
+
+if ($can_test_tidy) {
+    # make output tidier for tidy:
+    if (0) {
+	my @pretty;
+	$output =~ s{</(\w+)>}{</$1>\n}g;
+	@pretty = split /$/m, $output;
+	my $i = 0;
+	@pretty = map { $i++; "$i: $_\n" } @pretty;
+	print @pretty;
+    }
+
+    html_tidy_ok(RavLog::Test::Tidy->tidy, $output, 'html is tidy');
 }
 
-my $tidy = RavLog::Test::Tidy->tidy();
-html_tidy_ok( $tidy, $output, 'html is tidy' );
 xml_string_ok( $output, 'html is valid xml' );
 
 done_testing;
