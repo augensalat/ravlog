@@ -1,3 +1,6 @@
-Make jQuery javascript to replace the dojo in application.js
-See if we can dump the customized CalendarMonthSimple
-See if we can dump old version of Calendar::Simple (0.04!!)
+* Time zone support.
+* Make jQuery javascript to replace the dojo in application.js .
+* See if we can dump the customized CalendarMonthSimple.
+* See if we can dump old version of Calendar::Simple (0.04!!).
+* Installation with "make install".
+* Initial setup possible from browser.

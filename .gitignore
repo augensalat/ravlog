@@ -5,6 +5,8 @@ blib
 cover_db
 inc
 pm_to_blib
+ravlog_local.*
 *~
+*.db
 .*
 !.gitignore
