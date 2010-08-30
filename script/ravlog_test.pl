@@ -1,20 +1,7 @@
 #!/usr/bin/env perl
 
-use strict;
-use warnings;
-use Getopt::Long;
-use Pod::Usage;
-use FindBin;
-use lib "$FindBin::Bin/../lib";
-use Catalyst::Test 'RavLog';
-
-my $help = 0;
-
-GetOptions( 'help|?' => \$help );
-
-pod2usage(1) if ( $help || !$ARGV[0] );
-
-print request($ARGV[0])->content . "\n";
+use Catalyst::ScriptRunner;
+Catalyst::ScriptRunner->run('RavLog', 'Test');
 
 1;
 
@@ -27,7 +14,7 @@ ravlog_test.pl - Catalyst Test
 ravlog_test.pl [options] uri
 
  Options:
-   -help    display this help and exits
+   --help    display this help and exits
 
  Examples:
    ravlog_test.pl http://localhost/some_action
