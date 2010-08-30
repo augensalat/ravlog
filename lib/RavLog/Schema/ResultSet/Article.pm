@@ -1,51 +1,54 @@
 package RavLog::Schema::ResultSet::Article;
-use base 'DBIx::Class::ResultSet';
 
-sub get_latest_articles
-{
-   my ( $self, $number_of_posts ) = @_;
-   my $rows = 10;
-   $rows = $number_of_posts if defined $number_of_posts;
-   return $self->search( undef, { rows => $rows, order_by => 'article_id desc' } );
+use parent 'DBIx::Class::ResultSet';
+
+use DateTime;
+
+sub get_latest_articles {
+    my ($self, $number_of_posts) = @_;
+
+    return $self->search(
+	undef,
+	{
+	    rows => $number_of_posts || 10,
+	    order_by => {-desc => \'me.article_id'},
+	}
+    );
 }
 
-sub archived
-{
-   my ( $self, $year, $month, $day ) = @_;
+sub archived {
+    my ($self, $year, $month, $day) = @_;
+    my $lastday;
 
-   my $lastday;
-   if( defined $day ) {
-       $lastday = $day;
-   }
-   else {
-      $day = 1;
-      $lastday = DateTime->last_day_of_month( year => $year, month => $month )->day;
-
-   }
-   return $self->search(
-     {
-        created_at => {
-           -between => [ "$year-$month-$day 00:00:00", "$year-$month-$lastday 23:59:59" ]
-        }
+    if (defined $day) {
+	$lastday = $day;
+    }
+    else {
+	$day = 1;
+	$lastday = DateTime->last_day_of_month(year => $year, month => $month)->day;
+    }
+    return $self->search(
+    {
+	created_at => {
+	    # XXX TODO time zone support XXX
+	   -between => [ "$year-$month-$day 00:00:00", "$year-$month-$lastday 23:59:59" ]
+	}
      },
-     { order_by => 'article_id desc' }
-   );
+     {order_by => {-desc => 'article_id'}}
+    );
 
 }
 
-sub from_month
-{
-   my ( $self, $month, $year ) = @_;
+sub from_month {
+    my $self = shift;
+    my $month = shift;
+    my $year = shift || DateTime->now->year;
+    my $lastday = DateTime->last_day_of_month(year => $year, month => $month)->day;
 
-   $year = DateTime->now()->year() unless defined $year;
-
-   my $dt      = DateTime->now();
-   my $lastday = DateTime->last_day_of_month( year => $year, month => $month )->day;
-   my $hour    = $dt->hour();
-
-   return $self->search(
-      { created_at => { -between => [ "$year-$month-1", "$year-$month-$lastday" ] } },
-      { order_by   => 'article_id desc' } )->all();
+    return $self->search(
+        { created_at => { -between => [ "$year-$month-1", "$year-$month-$lastday" ] } },
+        { order_by   => 'article_id desc' }
+    )->all();
 }
 
 1;

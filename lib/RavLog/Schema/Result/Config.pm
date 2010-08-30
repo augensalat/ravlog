@@ -3,32 +3,31 @@ package RavLog::Schema::Result::Config;
 use strict;
 use warnings;
 
-use base 'DBIx::Class';
+use parent 'DBIx::Class::Core';
 
-__PACKAGE__->load_components( "Core" );
-__PACKAGE__->table("config");
+__PACKAGE__->table('config');
+
 __PACKAGE__->add_columns(
-   "name",
-   {
-      data_type         => 'varchar',
-      is_nullable       => 1,
-   },
-   "value",
-   {
-      data_type     => "varchar",
-      is_nullable   => 1,
-      size          => 255,
-   },
-   "description",
-   {
-      data_type     => "varchar",
-      default_value => undef,
-      is_nullable   => 1,
-      size          => 255,
-   },
+    name => {
+	data_type     => 'varchar',
+	is_nullable   => 0,
+	default_value => '',
+        size          => 60,
+    },
+    value => {
+	data_type     => 'varchar',
+	is_nullable   => 0,
+	default_value => '',
+        size          => 255,
+    },
+    description => {
+	data_type     => 'varchar',
+	is_nullable   => 1,
+	size          => 255,
+    },
 );
 
-__PACKAGE__->set_primary_key("name");
+__PACKAGE__->set_primary_key('name');
 
 1;
 
