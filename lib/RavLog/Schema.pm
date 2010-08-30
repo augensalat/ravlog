@@ -16,7 +16,13 @@ This is L<schema class|DBIx::Class::Schema> of the RavLog database.
 C<RavLog::Schema> inherits from L<DBIx::Class::Schema|DBIx::Class::Schema>
 and adds a few methods.
 
+=head1 VERSION
+
+This is version 0.1
+
 =cut
+
+our $VERSION = '0.1';
 
 __PACKAGE__->mk_group_accessors(
     simple => qw(
@@ -117,6 +123,13 @@ after deploy => sub {
     });
 
 };
+
+sub sqlt_deploy_hook {
+    my ($self, $sqlt_schema) = @_;
+
+    $_->extra(mysql_charset => 'utf8')
+	for $sqlt_schema->get_tables;
+}
 
 __PACKAGE__->meta->make_immutable;
 
