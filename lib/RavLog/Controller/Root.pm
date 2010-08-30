@@ -52,11 +52,13 @@ sub page : Local
    $c->stash->{template} = 'page.tt';
 }
 
-sub archived : Local
-{
-   my ( $self, $c, $year, $month, $day ) = @_;
+sub archived : Local {
+   my ($self, $c, $year, $month, $day) = @_;
 
-   my $articles = $c->model('DB::Article')->archived( $year, $month, $day );
+   my $articles = $c->model('DB::Article')->archived(
+       year => $year, month => $month, day => $day,
+       time_zone => $c->config->{time_zone_object}
+   );
    $c->stash->{articles} = $articles; 
    $c->stash->{template} = 'blog_index.tt';
 }
@@ -108,38 +110,38 @@ sub tags
 
 sub links
 {
-   my ( $self, $c ) = @_;
-   my @links = $c->model('DB::Link')->search( undef, { order_by => 'link_id desc' } )->all();
-   $c->stash->{links} = [@links];
+    my ($self, $c) = @_;
+    my @links = $c->model('DB::Link')->search( undef, { order_by => 'link_id desc' } )->all();
+    $c->stash->{links} = [@links];
 }
 
-sub calendar : Local
-{
-   my ( $self, $c ) = @_;
+sub calendar : Local {
+    my ($self, $c) = @_;
 
-   my $dt  = DateTime->now();
-   my $cal = new HTML::CalendarMonthSimple(
-      'year'  => $dt->year,
-      'month' => $dt->month
-   );
-   $cal->border(0);
-   $cal->width(50);
-   $cal->headerclass('month_date');
-   $cal->showweekdayheaders(0);
+    my $dt  = DateTime->now;
+    my $cal = HTML::CalendarMonthSimple->new(
+	year  => $dt->year, month => $dt->month
+    );
+    $cal->border(0);
+    $cal->width(50);
+    $cal->headerclass('month_date');
+    $cal->showweekdayheaders(0);
 
-   my @articles = $c->model('DB::Article')->from_month( $dt->month );
+    my @articles = $c->model('DB::Article')->from_month(
+	year  => $dt->year, month => $dt->month,
+	time_zone => $c->config->{time_zone_object}
+    );
 
-   foreach my $article (@articles)
-   {
-      my $location =
-           '/archived/'
-         . $article->created_at->year() . '/'
-         . $article->created_at->month() . '/'
-         . $article->created_at->mday();
-      $cal->setdatehref( $article->created_at->mday(), $location );
-   }
+    foreach my $article (@articles) {
+	my $location =
+	    '/archived/'
+	  . $article->created_at->year . '/'
+	  . $article->created_at->month . '/'
+	  . $article->created_at->mday;
+	$cal->setdatehref($article->created_at->mday, $location);
+    }
 
-   $c->stash->{calendar} = $cal->as_HTML;
+    $c->stash->{calendar} = $cal->as_HTML;
 }
 
 sub archives

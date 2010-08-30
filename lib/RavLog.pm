@@ -1,83 +1,113 @@
 package RavLog;
 
-use strict;
-use warnings;
+use Moose;
+use namespace::autoclean;
+
+use Catalyst::Runtime 5.80;
+
 use DateTime;
 use Text::Highlight;
-use Config::Any::Perl;
+
+extends 'Catalyst';
 
 our $VERSION = '0.01';
 
-use Catalyst ( 
-   '-Debug',
-   'Static::Simple',
-   'ConfigLoader',
-   'Cache::FileCache',
-   'PageCache',
-   'Session', 
-   'Session::Store::FastMmap', 
-   'Session::State::Cookie', 
-   'Authentication', 
-   '+CatalystX::SimpleLogin',
+use Catalyst qw( 
+    -Debug
+    Static::Simple
+    ConfigLoader
+    Session
+    Session::Store::FastMmap
+    Session::State::Cookie
+    Authentication
+    +CatalystX::SimpleLogin
 );
 
 
-__PACKAGE__->config( static => {
-     dirs    => [ 'static', qr/^(stylesheets|javascripts|css|js)/,],
-   }
-);
-
-# warning: SimpleLogin not yet stable. may change.
 __PACKAGE__->config(
+
+    name => 'RavLog',
+    time_zone => 'local',
+
+    # Disable deprecated behavior needed by old applications
+    disable_component_resolution_regex_fallback => 1,
+    default_view => 'TT',
+
+    static => {
+	dirs    => [ 'static', qr/^(stylesheets|javascripts|css|js)/,],
+    },
+
+    'Plugin::Session' => {
+	expires => 3600,
+	storage => '__HOME__/tmp/sessions',
+	flash_to_stash => 1,
+    },
+
+    'Plugin::Authentication' => {
+	default_realm => 'basic',
+	use_session => 0,
+	realms => {
+	    basic => {
+		use_session => 1,
+		credential => {
+		    class => 'Password',
+		    password_field => 'password',
+		    password_type => 'self_check',
+		},
+		store => {
+		    class => 'DBIx::Class',
+		    user_class => 'DB::User',
+		    user_field => 'username',
+		    use_userdata_from_session => 1,
+		},
+	    },
+	    # adding OpenID support
+	    # http://blog.afoolishmanifesto.com/archives/913
+	},
+    },
+
     'Controller::Login' => {
         traits => ['WithRedirect', 'Logout', 'RenderAsTTTemplate'],
-     }
+     },
+
+    'View::JSON' => {
+	json_driver => 'JSON::XS',
+    },
+
 );
 
-__PACKAGE__->config( 'View::JSON' => { json_driver => 'JSON::XS' } );
 
-__PACKAGE__->config( 'Plugin::Cache' => 
-  { backend => { store => 'FastMmap' } } );
-                
-__PACKAGE__->config( 'Plugin::Authentication' => {
-    default_realm => 'dbic',
-        dbic => {
-            credential => {
-                class => 'Password',
-                password_field => 'password',
-                password_type => 'clear',
-            },
-            store => {
-                class => 'DBIx::Class',
-                user_class => 'DB::User',
-                user_field => 'username',
-            },
-	},
-});
+# __PACKAGE__->config( 'Plugin::Cache' => 
+#   { backend => { store => 'FastMmap' } } );
+#                 
+# __PACKAGE__->config( 'Plugin::PageCache'  => {
+#     set_http_headers => 1,
+#     expires => 20,
+#     auto_check_user => 1,
+#     auto_cache => [
+#         '/view/.*',
+#         '/',
+#         '/category/.*',
+#         '/archived/.*',
+#         '/page/.*',
+#     ],
+#     debug => 0,
+# });
 
-__PACKAGE__->config( 'Plugin::PageCache'  => {
-    set_http_headers => 1,
-    expires => 20,
-    auto_check_user => 1,
-    auto_cache => [
-        '/view/.*',
-        '/',
-        '/category/.*',
-        '/archived/.*',
-        '/page/.*',
-    ],
-    debug => 0,
-});
 
-__PACKAGE__->config( 'Plugin::Session' => {
-    expires => 3600,
-    storage => '__HOME__/tmp/sessions',
-    flash_to_stash => 1,
-});
+before setup_finalize => sub {
+    my $class = shift;
 
+    # find the server's time zone, create a DateTime::TimeZone object
+    my $tz = eval {
+	DateTime::TimeZone->new(name => $class->config->{time_zone})
+    } || DateTime::TimeZone->new(name => 'local');
+    $class->config(time_zone_object => $tz);
+};
 
 # Start the application
 __PACKAGE__->setup;
+
 
 
 #===================================================

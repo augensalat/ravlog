@@ -17,8 +17,11 @@ sub get_latest_articles {
 }
 
 sub archived {
-    my ($self, $year, $month, $day) = @_;
+    my $self = shift;
+    my %arg = @_;
+    my ($year, $month, $day, $time_zone) = @arg{qw(year month day time_zone)};
     my $lastday;
+    my $schema = $self->result_source->schema;
 
     if (defined $day) {
 	$lastday = $day;
@@ -27,28 +30,58 @@ sub archived {
 	$day = 1;
 	$lastday = DateTime->last_day_of_month(year => $year, month => $month)->day;
     }
+
+    my $from = DateTime->new(
+	year => $year, month => $month, day => $day,
+	time_zone => $time_zone || 'local'
+    );
+    my $until = $from->clone->set_day($lastday)->add(days => 1)->subtract(seconds => 1);
+
     return $self->search(
-    {
-	created_at => {
-	    # XXX TODO time zone support XXX
-	   -between => [ "$year-$month-$day 00:00:00", "$year-$month-$lastday 23:59:59" ]
+	{
+	    created_at => {
+		# XXX TODO time zone support XXX
+		-between => [
+		    $schema->format_datetime($from),
+		    $schema->format_datetime($until)
+		]
+	    }
+	},
+	{
+	    order_by => {-desc => \'article_id'},
+	    cache => 1,
 	}
-     },
-     {order_by => {-desc => 'article_id'}}
     );
 
 }
 
 sub from_month {
     my $self = shift;
-    my $month = shift;
-    my $year = shift || DateTime->now->year;
+    my %arg = @_;
+    my ($month, $time_zone) = @arg{qw(month time_zone)};
+    my $year = $arg{year} || DateTime->now->year;
     my $lastday = DateTime->last_day_of_month(year => $year, month => $month)->day;
+    my $schema = $self->result_source->schema;
+    my $from = DateTime->new(
+	year => $year, month => $month, day => 1,
+	time_zone => $time_zone || 'local'
+    );
+    my $until = $from->clone->set_day($lastday)->add(days => 1)->subtract(seconds => 1);
 
     return $self->search(
-        { created_at => { -between => [ "$year-$month-1", "$year-$month-$lastday" ] } },
-        { order_by   => 'article_id desc' }
-    )->all();
+        {
+	    created_at => {
+		-between => [
+		    $schema->format_datetime($from),
+		    $schema->format_datetime($until)
+		]
+	    }
+	},
+        {
+	    order_by => {-desc => \'article_id'},
+	    cache => 1,
+	}
+    )->all;
 }
 
 1;

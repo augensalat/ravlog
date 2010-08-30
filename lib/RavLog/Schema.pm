@@ -28,18 +28,39 @@ __PACKAGE__->load_namespaces;
 
 =head1 METHODS
 
+=head2 format_datetime
+
+  $schema->resultset('Book')->search({
+    written_on => $schema->format_datetime($dt),
+  });
+
+Format a DateTime timestamp for the current db engine. Takes the current
+time in the UTC time zone if no (valid) argument is given.
+
+=cut
+
+sub format_datetime {
+    my $self = shift;
+    my $dt = shift;
+    
+    blessed $dt and $dt->isa('DateTime') or $dt = DateTime->now;
+
+    $self->storage->datetime_parser->format_datetime($dt);
+}
+
 =head2 now
 
   $schema->resultset('Book')->search({
     written_on => $schema->now,
   });
 
-Get current datetimestamp formatted for the current db engine.
+Get current datetime in the UTC time zone formatted for the current db engine.
+Does virtually the same as L<< $schema->format_datetime()|format_datetime >>.
   
 =cut
 
 sub now {
-    $_[0]->storage->datetime_parser->format_datetime(DateTime->now);
+    $_[0]->format_datetime;
 }
 
 =head2 esc_char
