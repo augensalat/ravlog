@@ -71,8 +71,9 @@ sub clear : Chained('item') PathPart('clear') Args(0)
 {
 
    my ( $self, $c ) = @_;
-   $c->cache->remove('front_page_articles');
-   $c->clear_cached_page('/');
-   $c->clear_cached_page( '/view/' . $c->nifty_txt_to_url( $self->article->subject ) );
+#    $c->cache->remove('front_page_articles');
+#    $c->clear_cached_page('/');
+#    $c->clear_cached_page( '/view/' . $c->nifty_txt_to_url( $self->article->subject ) );
 }
-1;
+
+__PACKAGE__->meta->make_immutable;
