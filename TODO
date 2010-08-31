@@ -1,6 +1,27 @@
-* Time zone support.
-* Make jQuery javascript to replace the dojo in application.js .
-* See if we can dump the customized CalendarMonthSimple.
-* See if we can dump old version of Calendar::Simple (0.04!!).
-* Installation with "make install".
-* Initial setup possible from browser.
+Short Term
+==========
+- Time zone support.
+- Hide/publish attribute for articles.
+- Improve the interface, esp. forms, and how tags are managed.
+- Have caching that works.
+- Make jQuery javascript to replace the dojo in application.js .
+- See if we can dump the customized CalendarMonthSimple.
+- See if we can dump old version of Calendar::Simple (0.04!!).
+- User roles (user, editor, admin), user groups.
+- User online registration (email based challenge-response).
+- Editor online creation by admin users.
+
+Medium Term
+===========
+- l10n
+- Get rid of /admin section - make access depend on user privileges.
+- Installation with "make install".
+- Initial setup possible from browser.
+- Blacklists against mis-use
+- Comment checking against mis-use (Blog::Spam)
+
+Long Term
+=========
+- AJAX/RESTful interface (optional)
+- Separate: local CMS - public static pages (optional)
+- Support for reverse proxy cache systems and ESI, e.g. Varnish (optional)
