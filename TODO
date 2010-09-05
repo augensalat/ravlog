@@ -1,6 +1,5 @@
 Short Term
 ==========
-- Time zone support.
 - Hide/publish attribute for articles.
 - Improve the interface, esp. forms, and how tags are managed.
 - Have caching that works.

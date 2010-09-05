@@ -46,6 +46,11 @@ __PACKAGE__->add_columns(
 	is_nullable   => 1,
 	size          => 255,
     },
+    timezone => {
+	data_type => 'varchar',
+	is_nullable => 1,
+	size => '100',
+    },
     created_at => {
 	data_type     => 'datetime',
 	set_on_create => 1,
@@ -79,6 +84,13 @@ sub gravatar {
 	or return undef;
 
     return Gravatar::URL::gravatar_url(email => $email, @_);
+}
+
+# additional tasks when deploying this table
+sub sqlt_deploy_hook {
+    my ($self, $sqlt_table) = @_;
+
+    $sqlt_table->add_index(name => 'user_idx_email', fields => ['email']);
 }
 
 1;
