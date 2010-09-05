@@ -16,6 +16,7 @@ requires 'Catalyst::Plugin::Session' => '0.22';
 requires 'Catalyst::Plugin::Session::State::Cookie' => '0.11';
 requires 'Catalyst::Plugin::Session::Store::FastMmap' => '0.11';
 requires 'Catalyst::Plugin::Static::Simple' => '0.21';
+requires 'Catalyst::Plugin::Unicode::Encoding';
 requires 'Catalyst::View::JSON' => '0.26';
 requires 'Catalyst::View::TT' => '0.29';
 requires 'CatalystX::SimpleLogin' => '0.08';

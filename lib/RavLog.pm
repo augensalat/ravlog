@@ -14,8 +14,9 @@ our $VERSION = '0.01';
 
 use Catalyst qw( 
     -Debug
-    Static::Simple
     ConfigLoader
+    Static::Simple
+    Unicode::Encoding
     Session
     Session::Store::FastMmap
     Session::State::Cookie
