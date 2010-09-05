@@ -1,123 +1,114 @@
 package RavLog::Controller::Root;
 
 use Moose;
-BEGIN {
-   extends 'Catalyst::Controller';
-}
+use namespace::autoclean;
+
 use HTML::CalendarMonthSimple;
+
+BEGIN {
+    extends 'Catalyst::Controller';
+}
 
 __PACKAGE__->config->{namespace} = '';
 
-sub begin : Private
-{
-   my ( $self, $c ) = @_;
+sub begin : Private {
+    my ($self, $c) = @_;
+    my $stash = $c->stash;
 
-   if( $c->model('DB::Config')->find('front page')->value ne 'blog' ) {
-        $c->stash('blog_page' => 1 );
+    if ($c->model('DB::Config')->find('front page')->value ne 'blog') {
+	$stash->{blog_page} = 1;
     }
-   $c->stash->{pages} =
-      [ $c->model('DB::Page')->search( display_in_drawer => 1 )->all() ];
-   $c->stash->{activelink} = { home => 'activelink' };    # set it to home unless overridden.
-   $c->stash->{sidebar} = 1;
-   $c->stash->{xmlrpc} = undef;
+    $stash->{pages} = [$c->model('DB::Page')->search({display_in_drawer => 1})->all];
+    $stash->{activelink} = {home => 'activelink'};    # set it to home unless overridden.
+    $stash->{sidebar} = 1;
+    $stash->{xmlrpc} = undef;
 }
 
 sub base : Chained PathPart('') CaptureArgs(0) {}
 
-sub tag : Local
-{
-   my ( $self, $c, $tag ) = @_;
+sub tag : Local {
+    my ($self, $c, $tag) = @_;
+    my $stash = $c->stash;
+    my $db_tag = $c->model('DB::Tag')
+	->search({name => {like => $c->ravlog_url_to_query($tag)}})->first;
 
-   my $db_tag =
-      $c->model('DB::Tag')
-      ->search( { name => { like => $c->ravlog_url_to_query($tag) } } )->first();
-   $c->stash->{articles} = $db_tag->articles;
-   $c->stash->{template} = 'blog_index.tt';
-   $c->stash->{rss}      = $db_tag->name;
+    $stash->{articles} = $db_tag->articles;
+    $stash->{rss}      = $db_tag->name;
+    $stash->{template} = 'blog_index.tt';
 }
 
-sub page : Local
-{
-   my ( $self, $c, $what ) = @_;
+sub page : Local {
+    my ($self, $c, $what) = @_;
+    my $stash = $c->stash;
+    my $page = $c->model('DB::Page')
+	->search({name => {like => $c->ravlog_url_to_query($what)}})->first;
+    my $name = $c->ravlog_txt_to_url($page->name);
 
-   my $page =
-      $c->model('DB::Page')
-      ->search( { name => { like => $c->ravlog_url_to_query($what) } } )->first();
-
-   $c->stash->{sidebar} = undef unless $page->display_sidebar();
-   $c->stash->{page}    = $page;
-   $c->stash->{title}   = $page->name;
-   my $name = $c->ravlog_txt_to_url( $page->name );
-   $c->stash->{activelink} = { $name => 'activelink' };
-   $c->stash->{template} = 'page.tt';
+    $stash->{sidebar} = undef unless $page->display_sidebar;
+    $stash->{page}    = $page;
+    $stash->{title}   = $page->name;
+    $stash->{activelink} = {$name => 'activelink'};
+    $stash->{template} = 'page.tt';
 }
 
 sub archived : Local {
-   my ($self, $c, $year, $month, $day) = @_;
+    my ($self, $c, $year, $month, $day) = @_;
+    my $stash = $c->stash;
 
-   my $articles = $c->model('DB::Article')->archived(
-       year => $year, month => $month, day => $day,
-       time_zone => $c->config->{time_zone_object}
-   );
-   $c->stash->{articles} = $articles; 
-   $c->stash->{template} = 'blog_index.tt';
+    $stash->{articles} = $c->model('DB::Article')->archived(
+	year => $year, month => $month, day => $day,
+	time_zone => $c->config->{time_zone_object}
+    );
+    $stash->{template} = 'blog_index.tt';
 }
 
-sub default : Local
-{
-   my ( $self, $c ) = @_;
+sub default : Local {
+    my ($self, $c) = @_;
 
-   $self->blog_index($c);
+    $c->forward('/article/list');
 }
 
 sub front_page : Path Args(0) {
-    my ( $self, $c ) = @_;
-
+    my ($self, $c) = @_;
+    my $stash = $c->stash;
     my $front_page = $c->model('DB::Config')->find('front page');
-    $c->stash( activelink => { 'home' => 'activelink' } );
-    if( $front_page->value eq 'blog' ) {
-        $self->blog_index($c);
+
+    $stash->{activelink} = {'home' => 'activelink'};
+
+    if ($front_page->value eq 'blog') {
+	$c->forward('/article/list');
     }
     else {
-        my $page = $c->model('DB::Page')
-          ->search( { name => { like => $c->ravlog_url_to_query($front_page->value) } } )->first();
-        $c->stash->{page}    = $page;
-        $c->stash( template => 'page.tt' );
+        $stash->{page} = $c->model('DB::Page')
+          ->search({name => {like => $c->ravlog_url_to_query($front_page->value)}})
+	  ->first;
+        $stash->{template} = 'page.tt';
     }
-}
-
-sub blog_index {
-   my ( $self, $c ) = @_;
-
-   my $articles = $c->model('DB::Article')->get_latest_articles();
-   $c->stash->{articles} = $articles; 
-   $c->stash->{template} = 'blog_index.tt';
 }
 
 sub blog : Path('/blog') Args(0) {
-    my ( $self, $c ) = @_;
-    $c->stash( activelink => { 'blog' => 'activelink' } );
-    $self->blog_index($c);
-}
-
-sub tags 
-{
-   my ( $self, $c ) = @_;
-
-   my @tags = $c->model('DB::Tag')->all();
-   $c->stash->{tags} = [@tags];
-}
-
-sub links
-{
     my ($self, $c) = @_;
-    my @links = $c->model('DB::Link')->search( undef, { order_by => 'link_id desc' } )->all();
-    $c->stash->{links} = [@links];
+
+    $c->stash(activelink => {'blog' => 'activelink'});
+    $c->forward('/article/list');
+}
+
+sub tags {
+    my ($self, $c) = @_;
+
+    $c->stash->{tags} = [$c->model('DB::Tag')->all];
+}
+
+sub links {
+    my ($self, $c) = @_;
+
+    $c->stash->{links} = [
+	$c->model('DB::Link')->search(undef, {order_by => {-desc => 'link_id'}})->all
+    ];
 }
 
 sub calendar : Local {
     my ($self, $c) = @_;
-
     my $dt  = DateTime->now;
     my $cal = HTML::CalendarMonthSimple->new(
 	year  => $dt->year, month => $dt->month
@@ -232,4 +223,4 @@ sub end : Private
    $c->forward('TT');
 }
 
-1;
+__PACKAGE__->meta->make_immutable;

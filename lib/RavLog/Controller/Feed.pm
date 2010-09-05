@@ -31,9 +31,11 @@ sub comments : Local {
 	my $feed_entry = XML::Feed::Entry->new('RSS');
 
 	$feed_entry->title($com->name . "'s comment " . $com->created_at->ymd);
-	$feed_entry->link($c->uri_for(
-	    '/view/' . $c->ravlog_txt_to_url($com->article->subject) . '#comments'
-	));
+	$feed_entry->link(
+	    $c->uri_for_action(
+		'/article/view', [$c->ravlog_txt_to_url($com->article->subject)]
+	    ) . '#comments'
+	);
 	$feed_entry->summary($com->formatted_body);
 	$feed_entry->issued($com->created_at);
 	$feed->add_entry($feed_entry);
@@ -67,7 +69,9 @@ sub articles : Local {
 	my $feed_entry = XML::Feed::Entry->new('RSS');
 
 	$feed_entry->title($a->subject);
-	$feed_entry->link($c->uri_for('/view', $c->ravlog_txt_to_url($a->subject)));
+	$feed_entry->link($c->uri_for_action(
+	    '/article/view', [$c->ravlog_txt_to_url($a->subject)]
+	));
 	$feed_entry->summary($a->formatted_body);
 	$feed_entry->issued($a->created_at);
 	$feed->add_entry($feed_entry);
